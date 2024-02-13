@@ -51,7 +51,7 @@ func (km Kmeans) Partition(
 
 	cc, err := clusters.New(k, dataset)
 	if err != nil {
-		return cc, err
+		return nil, err
 	}
 
 	changes := 1
@@ -98,6 +98,63 @@ func (km Kmeans) Partition(
 		}
 
 		if i == km.iterations || changes < int(float64(len(dataset)*int(km.minPercent))) {
+			break
+		}
+
+	}
+
+	return cc, nil
+}
+
+func (km Kmeans) Clustering(cc clusters.Clusters, toimg string) (clusters.Clusters, error) {
+	var points clusters.Observations
+	for _, v := range cc {
+		points = append(points, v.Observations...)
+	}
+	pointsByCluster := make([]int, len(points))
+
+	changes := 1
+	for i := 0; changes > 0; i++ {
+		changes = 0
+
+		cc.Reset()
+		for p, point := range points {
+			ci := cc.Nearest(point)
+			cc[ci].Append(point)
+
+			if pointsByCluster[p] != ci {
+				pointsByCluster[p] = ci
+				changes++
+			}
+		}
+
+		for ci := 0; ci < len(cc); ci++ {
+			if len(cc[ci].Observations) == 0 {
+
+				var ri int
+				for {
+					ri = rand.Intn(len(points))
+					if len(cc[pointsByCluster[ri]].Observations) > 1 {
+						break
+					}
+				}
+
+				cc[ci].Append(points[ri])
+				pointsByCluster[ri] = ci
+				changes = len(points)
+			}
+		}
+
+		if changes > 0 {
+			cc.Recenter()
+		}
+
+		err := km.plotter.Plot(cc, toimg)
+		if err != nil {
+			return nil, fmt.Errorf("error to save plot to the file")
+		}
+
+		if i == km.iterations || changes < int(float64(len(points)*int(km.minPercent))) {
 			break
 		}
 
