@@ -78,7 +78,7 @@ func (cs Clusters) AverageCentersDist() float64 {
 
 	var dist float64
 	for i := range cs {
-		for j := i + 1; j < len(cs[i].Observations); j++ {
+		for j := i + 1; j < len(cs); j++ {
 			size++
 			dist += cs[i].Center.Distance(cs[j].Center)
 		}
