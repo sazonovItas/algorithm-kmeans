@@ -56,6 +56,37 @@ func (cs Clusters) Nearest(point Observation) int {
 	return ci
 }
 
+func (cs *Cluster) FarthestPoint() Coordinates {
+	dist, nd := -1.0, 0
+
+	for i, v := range cs.Observations {
+		d := cs.Center.Coordinates().Distance(v.Coordinates())
+
+		if d > dist {
+			nd = i
+			dist = d
+		}
+	}
+
+	point := make([]float64, len(cs.Observations[nd].Coordinates()))
+	copy(point, cs.Observations[nd].Coordinates())
+	return point
+}
+
+func (cs Clusters) AverageCentersDist() float64 {
+	size := 0
+
+	var dist float64
+	for i := range cs {
+		for j := i + 1; j < len(cs[i].Observations); j++ {
+			size++
+			dist += cs[i].Center.Distance(cs[j].Center)
+		}
+	}
+
+	return dist / float64(size)
+}
+
 func (c *Cluster) Recenter() {
 	center, err := c.Observations.Center()
 	if err != nil {
